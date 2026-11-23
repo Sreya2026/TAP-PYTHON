@@ -17,3 +17,16 @@ venv/
 
 # VS Code settings
 .vscode/
+
+# Generated output
+output/
+logs/
+
+# Generated files
+clean_orders.csv
+clean_orders.json
+run_summary.json
+
+# Python cache
+__pycache__/
+*.pyc
