@@ -1,0 +1,17 @@
+paths:
+  orders: data/orders.csv
+  customers: data/customers.csv
+  products: data/products.csv
+
+thresholds:
+  min_price: 0
+  min_quantity: 1
+  max_missing_values: 0
+
+mappings:
+  orders:
+    order_id: order_id
+    customer_id: customer_id
+    order_date: order_purchase_timestamp
+    status: order_status
+    
