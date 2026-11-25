@@ -1,5 +1,52 @@
 {
-    "C:\\Users\\Sreya\\Documents\\Tap - Python\\olist_dataset\\orders.csv": "processed",
-    "C:\\Users\\Sreya\\Documents\\Tap - Python\\olist_dataset\\customers.csv": "processed",
-    "C:\\Users\\Sreya\\Documents\\Tap - Python\\olist_dataset\\products.csv": "processed"
+    "customers.csv": {
+        "status": "processed",
+        "file_hash": "9112949ea28bc4cfee049371dec807a915af5826415bc0f98d23434bd0e110b4",
+        "rows": 500
+    },
+    "geolocation.csv": {
+        "status": "processed",
+        "file_hash": "bea231e65656c6d8ee2cadf6d30aaaafe8ec556b95501499036ddd1fbce58171",
+        "rows": 2229
+    },
+    "order_items.csv": {
+        "status": "processed",
+        "file_hash": "cda7fee4f2651c743840c18071982611930013b59690c2a0384fd39c6180ccc2",
+        "rows": 576
+    },
+    "order_payments.csv": {
+        "status": "processed",
+        "file_hash": "ce56a7bcabbb57711b793690df267c5e358c9423d216a18db85caaaff129d7c4",
+        "rows": 545
+    },
+    "order_reviews.csv": {
+        "status": "processed",
+        "file_hash": "96c9151430f28c6691ffe71d9dc29fc1753e8e960e5f7d9afdb21fc5e6d63fd4",
+        "rows": 489
+    },
+    "orders.csv": {
+        "status": "processed",
+        "file_hash": "6de1a97bb4464b047c109490724329ef07bdeff0e6b94b36a0cb726cc00e8d22",
+        "rows": 500
+    },
+    "orders_semicolon.csv": {
+        "status": "processed",
+        "file_hash": "62646b7ed91d2b085acc868a61c9bc3efbc24dc4828f66333e5ac14e85bc9ca6",
+        "rows": 500
+    },
+    "product_category_name_translation.csv": {
+        "status": "processed",
+        "file_hash": "5233473346639d5ff3da9b784385ba284778abfaac1062572abe99e8aba8b7e3",
+        "rows": 71
+    },
+    "products.csv": {
+        "status": "processed",
+        "file_hash": "eb48aa787cf9ff47cadb44b22b8ea169670ba5db1d858bc2942759a4a896cadb",
+        "rows": 512
+    },
+    "sellers.csv": {
+        "status": "processed",
+        "file_hash": "7da781c26c7c7b71a9669505f4855f58a918b7d8ea0902d470ad0183badded4c",
+        "rows": 317
+    }
 }
