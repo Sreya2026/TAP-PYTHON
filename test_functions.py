@@ -1,109 +1,129 @@
-import pandas as pd
 
-from validator import validate_data, map_columns
+import unittest
+import tempfile
+import json
+from pathlib import Path
+from unittest.mock import patch
 
-from transformer import (
-    transform_data,
-    to_snake_case,
-    convert_data,
-    calculate_order_total
-)
+import reader
 
 
-# Test 1: Validate data
-def test_validate_data():
+class TestOlistPipeline(unittest.TestCase):
 
-    df = pd.DataFrame({
-        "name": ["Sreya", "Anu", "Sreya"],
-        "age": [23, None, 23]
-    })
+    # Test 1: Same file content should generate the same hash
+    def test_same_file_hash(self):
 
-    result = validate_data(df)
+        with tempfile.TemporaryDirectory() as temp_dir:
 
-    assert result.equals(df)
+            file_path = Path(temp_dir) / "test.csv"
+            file_path.write_text("id,name\n1,Ana\n", encoding="utf-8")
+
+            hash1 = reader.calculate_file_hash(file_path)
+            hash2 = reader.calculate_file_hash(file_path)
+
+            self.assertEqual(hash1, hash2)
+
+    # Test 2: Different file content should generate different hashes
+    def test_different_file_hash(self):
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            file1 = Path(temp_dir) / "file1.csv"
+            file2 = Path(temp_dir) / "file2.csv"
+
+            file1.write_text("id,name\n1,Ana\n", encoding="utf-8")
+            file2.write_text("id,name\n2,John\n", encoding="utf-8")
+
+            hash1 = reader.calculate_file_hash(file1)
+            hash2 = reader.calculate_file_hash(file2)
+
+            self.assertNotEqual(hash1, hash2)
+
+    # Test 3: Missing manifest should return an empty dictionary
+    def test_load_missing_manifest(self):
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            manifest_path = Path(temp_dir) / "manifest.json"
+
+            with patch.object(reader, "MANIFEST_FILE", manifest_path):
+
+                result = reader.load_manifest()
+
+                self.assertEqual(result, {})
+
+    # Test 4: Manifest should save and load correctly
+    def test_save_and_load_manifest(self):
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            manifest_path = Path(temp_dir) / "manifest.json"
+
+            sample_manifest = {
+                "customers.csv": {
+                    "status": "processed",
+                    "file_hash": "abc123",
+                    "rows": 500
+                }
+            }
+
+            with patch.object(reader, "MANIFEST_FILE", manifest_path):
+
+                reader.save_manifest(sample_manifest)
+                result = reader.load_manifest()
+
+                self.assertEqual(result, sample_manifest)
+
+    # Test 5: Invalid JSON should return an empty dictionary
+    def test_invalid_manifest(self):
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            manifest_path = Path(temp_dir) / "manifest.json"
+            manifest_path.write_text("{invalid json", encoding="utf-8")
+
+            with patch.object(reader, "MANIFEST_FILE", manifest_path):
+
+                result = reader.load_manifest()
+
+                self.assertEqual(result, {})
+
+    # Test 6: CSV should be processed once and skipped when unchanged
+    def test_idempotent_csv_processing(self):
+
+        with tempfile.TemporaryDirectory() as temp_dir:
+
+            dataset_dir = Path(temp_dir) / "olist_dataset"
+            dataset_dir.mkdir()
+
+            manifest_path = Path(temp_dir) / "manifest.json"
+
+            csv_path = dataset_dir / "customers.csv"
+
+            csv_path.write_text(
+                "customer_id,customer_city\n"
+                "1,Palakkad\n"
+                "2,Coimbatore\n",
+                encoding="utf-8"
+            )
+
+            with patch.object(reader, "DATASET_DIR", dataset_dir), \
+                 patch.object(reader, "MANIFEST_FILE", manifest_path):
+
+                # First run: CSV should be processed
+                first_result = reader.read_all_csvs()
+
+                self.assertIn("customers", first_result)
+                self.assertEqual(len(first_result["customers"]), 2)
+
+                # Check manifest was created
+                self.assertTrue(manifest_path.exists())
+
+                # Second run: unchanged CSV should be skipped
+                second_result = reader.read_all_csvs()
+
+                self.assertEqual(second_result, {})
 
 
-# Test 2: Transform data
-def test_transform_data():
-
-    df = pd.DataFrame({
-        "name": ["Sreya", "Anu", "Sreya"],
-        "age": [23, None, 23]
-    })
-
-    result = transform_data(df)
-
-    assert result.duplicated().sum() == 0
-    assert result.isnull().sum().sum() == 0
-
-
-# Test 3: Convert column name to snake_case
-def test_to_snake_case():
-
-    df = pd.DataFrame({
-        "Customer Name": ["Sreya"],
-        "Order-Date": ["2026-11-20"]
-    })
-
-    result = to_snake_case(df)
-
-    assert list(result.columns) == [
-        "customer_name",
-        "order_date"
-    ]
-
-
-# Test 4: Convert data types
-def test_convert_data():
-
-    data = [
-        {
-            "price": "100.50",
-            "freight_value": "20.50",
-            "order_purchase_timestamp": "2026-11-20 10:30:00"
-        }
-    ]
-
-    result = convert_data(data)
-
-    assert isinstance(result[0]["price"], float)
-    assert isinstance(result[0]["freight_value"], float)
-    assert result[0]["price"] == 100.50
-    assert result[0]["freight_value"] == 20.50
-
-
-# Test 5: Calculate order total
-def test_calculate_order_total():
-
-    data = [
-        {"order_id": "O1", "price": "100", "freight_value": "20"},
-        {"order_id": "O1", "price": "200", "freight_value": "30"},
-        {"order_id": "O2", "price": "150", "freight_value": "10"}
-    ]
-
-    result = calculate_order_total(data)
-
-    assert result["O1"] == 350
-    assert result["O2"] == 160
-
-
-# Test 6: Map columns
-def test_map_columns():
-
-    data = [
-        {"cust_id": 1, "cust_name": "Sreya"},
-        {"cust_id": 2, "cust_name": "Anu"}
-    ]
-
-    mapping = {
-        "cust_id": "customer_id",
-        "cust_name": "customer_name"
-    }
-
-    result = map_columns(data, mapping)
-
-    assert result[0]["customer_id"] == 1
-    assert result[0]["customer_name"] == "Sreya"
-    assert "cust_id" not in result[0]
-
-    
+if __name__ == "__main__":
+    unittest.main(verbosity=2)
